@@ -1,10 +1,15 @@
 from app import app
 from models import db, Cupcake
 
-
+# Create all tables within application context
+app.app_context().push()
 db.drop_all()
 db.create_all()
 
+# If table isn't empty, empty it
+Cupcake.query.delete()
+
+# Cupcakes
 c1 = Cupcake(
     flavor="cherry",
     size="large",

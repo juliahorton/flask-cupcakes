@@ -10,6 +10,7 @@ app.config['SQLALCHEMY_ECHO'] = False
 # Make Flask errors be real errors, rather than HTML pages with error info
 app.config['TESTING'] = True
 
+app.app_context().push()
 db.drop_all()
 db.create_all()
 
@@ -107,3 +108,41 @@ class CupcakeViewsTestCase(TestCase):
             })
 
             self.assertEqual(Cupcake.query.count(), 2)
+
+    def test_update_cupcake(self):
+        with app.test_client() as client:
+            url = f"/api/cupcakes/{self.cupcake.id}"
+            resp = client.patch(url, json={
+                "flavor": "TestPatchedFlavor",
+                "size": "TestPatchedSize",
+                "rating": 8,
+                "image": "http://test.com/patchedcupcake.jpg"
+            })
+
+            self.assertEqual(resp.status_code, 200)
+
+            data = resp.json
+
+            # don't know what ID we'll get, make sure it's an int & normalize
+            self.assertIsInstance(data['cupcake']['id'], int)
+            del data['cupcake']['id']
+
+            self.assertEqual(data, {
+                "cupcake": {
+                    "flavor": "TestPatchedFlavor",
+                    "size": "TestPatchedSize",
+                    "rating": 8,
+                    "image": "http://test.com/patchedcupcake.jpg"
+                }
+            })
+
+    def test_delete_cupcake(self):
+        with app.test_client() as client:
+            url = f"/api/cupcakes/{self.cupcake.id}"
+            resp = client.delete(url, json=CUPCAKE_DATA_2)
+
+            self.assertEqual(resp.status_code, 200)
+
+            data = resp.json.get("message")
+
+            self.assertEqual(data, "deleted")
